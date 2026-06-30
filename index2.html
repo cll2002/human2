@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>绩效管理系统 - 技术能力评估</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1e293b;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    .hidden { display: none !important; }
+
+    .navbar {
+      background: #1e293b;
+      color: #f1f5f9;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    .navbar .logo { font-weight: 700; font-size: 16px; color: #fff; }
+    .navbar .user { color: #94a3b8; }
+
+    .content { padding: 24px; }
+
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .steps .step { display: flex; align-items: center; gap: 6px; }
+    .steps .step.completed { color: #16a34a; }
+    .steps .step.active { color: #2563eb; font-weight: 600; }
+    .steps .divider { color: #c0c8d4; }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .card h3 { font-size: 16px; margin-bottom: 12px; color: #0f172a; }
+
+    .code-block {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 18px;
+      border-radius: 8px;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 13px;
+      white-space: pre;
+      margin: 16px 0;
+      line-height: 1.8;
+      overflow-x: auto;
+      border: 1px solid #334155;
+    }
+
+    .question {
+      margin: 20px 0;
+      padding: 18px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .question p {
+      font-weight: 600;
+      margin: 0 0 10px 0;
+      color: #0f172a;
+      font-size: 15px;
+    }
+
+    .option {
+      display: block;
+      margin: 8px 0;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #ffffff;
+      color: #334155;
+      font-size: 14px;
+    }
+    .option:hover { border-color: #3b82f6; background: #f0f7ff; }
+    .option.selected { border-color: #2563eb; background: #eef4ff; font-weight: 500; }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .validation-msg {
+      color: #dc2626;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .score-badge { display: flex; justify-content: center; margin: 20px 0; }
+    .score-circle {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: #fef2f2;
+      border: 4px solid #dc2626;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      color: #dc2626;
+    }
+
+    .feedback-box {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      margin: 24px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .feedback-box .meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .feedback-box .meta img {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 1px solid #d1d5db;
+      object-fit: cover;
+    }
+
+    .detail-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 18px;
+      border-radius: 8px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-size: 14px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #btn-seek-more {
+      background: #ffffff;
+      color: #2563eb;
+      border: 1px solid #2563eb;
+    }
+    #btn-seek-more:hover { background: #f0f7ff; }
+
+    .loading-container { text-align: center; padding: 40px 20px; }
+    .progress-bar {
+      width: 100%; height: 10px;
+      background: #e2e8f0; border-radius: 5px;
+      overflow: hidden; margin: 20px 0;
+    }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: #2563eb; border-radius: 5px;
+      transition: width 0.1s linear;
+    }
+    .receive-box { text-align: center; padding: 30px 20px; }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="logo">📊 绩效管理系统</div>
+    <div class="user">员工: 张明 | 部门: 后端开发一组</div>
+  </div>
+
+  <!-- 阶段1：任务页面 -->
+  <div id="stage-task" class="content">
+    <div class="steps">
+      <span class="step completed">✅ 评估说明</span>
+      <span class="divider">›</span>
+      <span class="step active">📝 能力测评</span>
+      <span class="divider">›</span>
+      <span class="step">📊 查看报告</span>
+    </div>
+
+    <div class="card">
+      <h3>技术能力评估：代码安全审查</h3>
+      <p style="color:#475569; font-size:14px; margin-bottom:12px;">请阅读以下用户登录模块代码，并完成后续问题。</p>
+
+      <div class="code-block"><code> 1  def login(username, password):
+ 2      q = "SELECT * FROM users WHERE u='"+username+"' AND p='"+password+"'"
+ 3      r = db.execute(q)
+ 4      if r:
+ 5          u = r[0]
+ 6          if u['status']=='active':
+ 7              session['uid']=u['id']; return True
+ 8      return False
+ 9
+10  def change_pwd(uid, old, new):
+11      q = f"SELECT password FROM users WHERE id={uid}"
+12      row = db.execute(q)[0]
+13      if row['password']==old:
+14          db.execute(f"UPDATE users SET password='{new}' WHERE id={uid}")
+15          return True
+16      return False</code></div>
+
+      <div class="question">
+        <p>1. 代码中存在哪些安全隐患？（多选，满分40分）</p>
+        <label class="option"><input type="checkbox" name="q1" value="sql"> SQL注入漏洞</label>
+        <label class="option"><input type="checkbox" name="q1" value="xss"> XSS跨站脚本攻击</label>
+        <label class="option"><input type="checkbox" name="q1" value="pwd"> 密码明文存储与比较</label>
+        <label class="option"><input type="checkbox" name="q1" value="csrf"> CSRF跨站请求伪造</label>
+      </div>
+
+      <div class="question">
+        <p>2. 修复SQL注入最推荐的方式是？（满分30分）</p>
+        <label class="option"><input type="radio" name="q2" value="regex"> 使用正则过滤特殊字符</label>
+        <label class="option"><input type="radio" name="q2" value="prepared"> 使用参数化查询（Prepared Statement）</label>
+        <label class="option"><input type="radio" name="q2" value="encode"> 将参数进行URL编码后拼接</label>
+      </div>
+
+      <div class="question">
+        <p>3. 密码应该如何安全存储？（满分30分）</p>
+        <label class="option"><input type="radio" name="q3" value="base64"> Base64编码存储</label>
+        <label class="option"><input type="radio" name="q3" value="aes"> AES对称加密存储</label>
+        <label class="option"><input type="radio" name="q3" value="bcrypt"> bcrypt哈希加盐存储</label>
+      </div>
+
+      <button id="btn-submit">提交答案，进入评估报告</button>
+      <div class="validation-msg" id="validation-msg">请完成所有题目后再提交。</div>
+    </div>
+  </div>
+
+  <!-- 阶段2：进度条加载界面 -->
+  <div id="stage-loading" class="content hidden">
+    <div class="steps">
+      <span class="step completed">✅ 评估说明</span>
+      <span class="divider">›</span>
+      <span class="step completed">✅ 能力测评</span>
+      <span class="divider">›</span>
+      <span class="step active">📊 查看报告</span>
+    </div>
+
+    <div id="loading-card" class="card loading-container">
+      <p id="loading-text" style="font-size:16px; font-weight:500;">王工（技术经理）正在根据您的作答生成反馈…</p>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p style="color:#64748b; font-size:13px;">请稍候</p>
+    </div>
+
+    <div id="receive-card" class="card receive-box hidden">
+      <img src="https://i.ibb.co/vxV0Dn1x/image.png" alt="王工" style="width:60px; height:60px; border-radius:50%; margin-bottom:15px;">
+      <p style="font-size:16px; font-weight:500;">您收到了来自 王工（技术经理） 的反馈</p>
+      <button id="btn-view-feedback">点击查看反馈</button>
+    </div>
+  </div>
+
+  <!-- 阶段3：反馈页面 -->
+  <div id="stage-feedback" class="content hidden">
+    <div class="steps">
+      <span class="step completed">✅ 评估说明</span>
+      <span class="divider">›</span>
+      <span class="step completed">✅ 能力测评</span>
+      <span class="divider">›</span>
+      <span class="step active">📊 查看报告</span>
+    </div>
+
+    <div class="card" style="text-align:center;">
+      <h3>评估结果</h3>
+      <div class="score-badge">
+        <div class="score-circle" id="score-display">-</div>
+      </div>
+      <p style="color:#64748b; font-size:14px;">代码安全与正确性得分</p>
+    </div>
+
+    <div class="feedback-box">
+      <div class="meta">
+        <img src="https://i.ibb.co/vxV0Dn1x/image.png" alt="王工" style="width:44px; height:44px; border-radius:50%;">
+        <div><strong>王工（技术经理）</strong></div>
+      </div>
+      <div id="feedback-body"></div>
+    </div>
+
+    <button id="btn-seek-more">联系王工，获取更详细的改进建议</button>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-top:8px;" id="btn-sub-text"></p>
+
+    <div id="detail-box" class="detail-box hidden"></div>
+  </div>
+
+  <script>
+    // ===== 固定条件：人 + 行政性 =====
+    const isHuman = true;
+    const isDev = false;
+
+    // ===== 评估者信息 =====
+    const evaluatorName = '王工（技术经理）';
+    const evaluatorImg = 'https://i.ibb.co/vxV0Dn1x/image.png';
+
+    // ===== 选项选中样式 =====
+    document.querySelectorAll('.option').forEach(opt => {
+      opt.addEventListener('click', function() {
+        const parent = this.parentElement;
+        if (parent.querySelector('input[type="radio"]')) {
+          parent.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+        }
+        this.classList.toggle('selected');
+      });
+    });
+
+    // ===== 提交校验 → 进度条 =====
+    document.getElementById('btn-submit').addEventListener('click', () => {
+      const q1Els = document.querySelectorAll('input[name="q1"]:checked');
+      const q2El = document.querySelector('input[name="q2"]:checked');
+      const q3El = document.querySelector('input[name="q3"]:checked');
+      if (q1Els.length === 0 || !q2El || !q3El) {
+        document.getElementById('validation-msg').style.display = 'block';
+        return;
+      }
+      document.getElementById('validation-msg').style.display = 'none';
+
+      const q1 = Array.from(q1Els).map(cb => cb.value);
+      const q2 = q2El.value;
+      const q3 = q3El.value;
+
+      document.getElementById('stage-task').classList.add('hidden');
+      document.getElementById('stage-loading').classList.remove('hidden');
+      document.getElementById('loading-text').innerText = `${evaluatorName}正在根据您的作答生成反馈…`;
+      simulateProgress(q1, q2, q3);
+    });
+
+    function simulateProgress(q1, q2, q3) {
+      const progressFill = document.getElementById('progress-fill');
+      const loadingCard = document.getElementById('loading-card');
+      const receiveCard = document.getElementById('receive-card');
+      let width = 0;
+      const totalTime = 2500;
+      const interval = 50;
+      const step = 100 / (totalTime / interval);
+      const timer = setInterval(() => {
+        width += step;
+        if (width >= 100) {
+          width = 100;
+          progressFill.style.width = '100%';
+          clearInterval(timer);
+          setTimeout(() => {
+            loadingCard.classList.add('hidden');
+            receiveCard.classList.remove('hidden');
+            document.getElementById('btn-view-feedback').onclick = function() {
+              document.getElementById('stage-loading').classList.add('hidden');
+              document.getElementById('stage-feedback').classList.remove('hidden');
+              renderFeedback(q1, q2, q3);
+            };
+          }, 300);
+        } else {
+          progressFill.style.width = width + '%';
+        }
+      }, interval);
+    }
+
+    // ===== 评分 =====
+    function calcScore(q1, q2, q3) {
+      const hasSQL = q1.includes('sql');
+      const hasPWD = q1.includes('pwd');
+      const hasWrong = q1.includes('xss') || q1.includes('csrf');
+      let q1Score = 0;
+      if (!hasWrong && hasSQL && hasPWD) q1Score = 40;
+      else if (!hasWrong && (hasSQL || hasPWD)) q1Score = 20;
+      const q2Score = (q2 === 'prepared') ? 30 : 0;
+      const q3Score = (q3 === 'bcrypt') ? 30 : 0;
+      return q1Score + q2Score + q3Score;
+    }
+
+    function getScoreColor(score) {
+      if (score >= 90) return { bg: '#f0fdf4', border: '#16a34a', text: '#16a34a' };
+      if (score >= 60) return { bg: '#fefce8', border: '#ca8a04', text: '#ca8a04' };
+      if (score >= 30) return { bg: '#fff7ed', border: '#ea580c', text: '#ea580c' };
+      return { bg: '#fef2f2', border: '#dc2626', text: '#dc2626' };
+    }
+
+    // ===== 动态反馈 =====
+    function getFeedback(q1, q2, q3, score) {
+      const hasSQL = q1.includes('sql');
+      const hasPWD = q1.includes('pwd');
+      const hasXSS = q1.includes('xss');
+      const hasCSRF = q1.includes('csrf');
+      const q1Correct = hasSQL && hasPWD && !hasXSS && !hasCSRF;
+      const q2Correct = q2 === 'prepared';
+      const q3Correct = q3 === 'bcrypt';
+      const totalCorrect = (q1Correct?1:0)+(q2Correct?1:0)+(q3Correct?1:0);
+
+      let q1Text = '<p><strong>🔍 安全隐患识别：</strong>';
+      if (q1Correct) {
+        q1Text += '您准确识别出了SQL注入和密码明文存储两个核心风险，对常见Web安全漏洞有清晰的认识。</p>';
+      } else {
+        let parts = [];
+        if (hasSQL && hasPWD) parts.push('您正确识别了SQL注入和密码明文存储');
+        else if (hasSQL) parts.push('您识别出了SQL注入风险');
+        else if (hasPWD) parts.push('您注意到了密码明文存储问题');
+        else parts.push('您未能识别出SQL注入和密码明文存储这两个核心风险');
+        if (hasXSS && hasCSRF) parts.push('同时误判了XSS和CSRF攻击（本段代码不涉及这两种漏洞场景）');
+        else if (hasXSS) parts.push('同时误判了XSS跨站脚本攻击（本段代码中并没有将用户输入直接输出到HTML页面的情况）');
+        else if (hasCSRF) parts.push('同时误判了CSRF跨站请求伪造（登录接口通常不是CSRF的主要攻击面）');
+        if (!hasSQL && !hasPWD) parts.push('SQL注入和密码明文存储是本代码最严重的安全问题');
+        else if (hasSQL && !hasPWD) parts.push('但遗漏了密码明文存储这一数据安全核心隐患');
+        else if (!hasSQL && hasPWD) parts.push('但遗漏了SQL注入这一最严重的安全漏洞');
+        q1Text += parts.join('，') + '。</p>';
+      }
+
+      let q2Text = '<p><strong>🛡️ 修复方案：</strong>';
+      if (q2Correct) q2Text += '您正确选择了参数化查询，这是防范SQL注入最有效的措施。它通过预编译SQL语句并分离参数，从根本上杜绝了恶意代码注入。</p>';
+      else if (q2 === 'regex') q2Text += '您选择了正则过滤。正则虽然能阻挡部分简单攻击，但容易被绕过，参数化查询才是最佳实践。</p>';
+      else if (q2 === 'encode') q2Text += '您选择了URL编码。编码主要用于处理特殊字符的传输，无法有效阻止SQL注入，攻击者仍可构造恶意负载。</p>';
+      else q2Text += '您未进行选择，建议学习参数化查询。</p>';
+
+      let q3Text = '<p><strong>🔐 密码存储：</strong>';
+      if (q3Correct) q3Text += '您正确选择了bcrypt哈希加盐存储。bcrypt内置盐值和计算成本因子，能有效抵御彩虹表和暴力破解，是业界推荐的标准方案。</p>';
+      else if (q3 === 'base64') q3Text += '您选择了Base64编码。Base64只是一种数据编码方式，可以轻易解码，无法提供真正的安全保护。</p>';
+      else if (q3 === 'aes') q3Text += '您选择了AES对称加密。虽然AES本身是安全的，但密钥管理是核心难题——密钥若与数据共存则加密形同虚设。对于密码存储，单向的哈希算法更为合适。</p>';
+      else q3Text += '您未进行选择，建议了解bcrypt等单向哈希算法的原理和应用。</p>';
+
+      // 行政性结论
+      let conclusionText = '<p><strong>📋 考核结论：</strong>';
+      if (totalCorrect === 3) {
+        conclusionText += '本次代码安全考核三项指标全部达标。该结果将作为本期薪酬评定与晋升评估的参考依据，您当前的安全能力在团队中处于前列。';
+      } else if (totalCorrect === 2) {
+        conclusionText += '本次考核部分指标未达标，该结果将影响当期安全合规评级，并作为后续薪酬调整与晋升决策的参考。建议在30天内完成未达标项的提升。';
+      } else {
+        conclusionText += '本次考核结果未达到岗位安全能力要求，需在30天内完成针对性学习并申请复评。本次结果将作为薪酬调整与晋升评估的参考依据。';
+      }
+      conclusionText += '</p>';
+      return q1Text + q2Text + q3Text + conclusionText;
+    }
+
+    function getDetail(q1, q2, q3) {
+      const hasSQL = q1.includes('sql');
+      const hasPWD = q1.includes('pwd');
+      const hasXSS = q1.includes('xss');
+      const hasCSRF = q1.includes('csrf');
+      const q1Correct = hasSQL && hasPWD && !hasXSS && !hasCSRF;
+      const q2Correct = q2 === 'prepared';
+      const q3Correct = q3 === 'bcrypt';
+      const tips = [];
+      // 行政性改进要求
+      if (!q1Correct) tips.push('• [30天内] 完成OWASP Top 10在线课程并通过内部安全考试。');
+      if (!q2Correct) tips.push('• [30天内] 提交至少3个使用Prepared Statement的代码片段，并附上注释说明。');
+      if (!q3Correct) tips.push('• [30天内] 完成一个用户密码存储模块的bcrypt改造，并附上安全测试通过证明。');
+      if (q1Correct && q2Correct && q3Correct) {
+        tips.push('• 当前考核达标。下周期提升指标：主导一次项目安全审计，提交至少两条安全规范改进建议。');
+      }
+      return tips.join('\n');
+    }
+
+    function renderFeedback(q1, q2, q3) {
+      const score = calcScore(q1, q2, q3);
+      document.getElementById('score-display').innerText = score;
+      const color = getScoreColor(score);
+      const circle = document.getElementById('score-display');
+      circle.style.background = color.bg;
+      circle.style.borderColor = color.border;
+      circle.style.color = color.text;
+
+      document.getElementById('feedback-body').innerHTML = getFeedback(q1, q2, q3, score);
+
+      const btnMore = document.getElementById('btn-seek-more');
+      btnMore.innerText = '联系王工，获取更详细的改进建议';
+      btnMore.disabled = false;
+      btnMore.style.background = '#ffffff';
+      btnMore.style.color = '#2563eb';
+      btnMore.style.border = '1px solid #2563eb';
+      document.getElementById('detail-box').classList.add('hidden');
+
+      btnMore.onclick = function() {
+        // 记录因变量
+        if (typeof Credamo !== 'undefined' && Credamo.setFixedVar) {
+          Credamo.setFixedVar('seek_feedback', 1);
+        }
+        document.getElementById('detail-box').innerText = getDetail(q1, q2, q3);
+        document.getElementById('detail-box').classList.remove('hidden');
+        btnMore.disabled = true;
+        btnMore.innerText = '✓ 已生成详细建议';
+        btnMore.style.background = '#16a34a';
+        btnMore.style.color = '#ffffff';
+        btnMore.style.border = '1px solid #16a34a';
+      };
+    }
+  </script>
+</body>
+</html>
